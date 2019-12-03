@@ -28,6 +28,7 @@ def parseargs():
 	parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
 	parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
 	parser.add_argument("--channels", type=int, default=1, help="number of image channels")
+	parser.add_argument("--model",type=str,default="realnvp")
 
 	args = parser.parse_args()
 	if args.checkpoint_dir == "":
@@ -53,11 +54,13 @@ def train(args,generator,discriminator,dataloader,optimizer_G,optimizer_D,epoch)
 		optimizer_G.zero_grad()
 
         # Sample noise as generator input
-		z=torch.randn(GANmodel.initialize_z(imgs.shape[0]),dtype=torch.float32,device=device)
+		#z=torch.randn(GANmodel.initialize_z(imgs.shape[0]),dtype=torch.float32,device=device)
 
         # Generate a batch of images
-		gen_imgs,_ = generator(z,reverse=True)
+		#gen_imgs,_ = generator(z,reverse=True)
+		#gen_imgs=torch.sigmoid(gen_imgs)
 		#gen_imgs = generator(z)
+		gen_imgs=GANmodel.sample(imgs.shape[0]).to(device)
 
         # Loss measures generator's ability to fool the discriminator
 		g_loss = adversarial_loss(discriminator(gen_imgs), valid)
@@ -80,7 +83,7 @@ def train(args,generator,discriminator,dataloader,optimizer_G,optimizer_D,epoch)
 		    % (epoch, args.num_epochs, i, len(dataloader), d_loss.item(), g_loss.item())
 		)
 		if i%200==0:
-			save_image(gen_imgs.data[:25], "images/epoch-{}, batches-{}.png".format(epoch,i), nrow=5, normalize=True)
+			save_image(gen_imgs.data[:25], "images/epoch-{}, batches-{}.png".format(epoch,i), nrow=5, normalize=False)
 
 def test(args):
 	pass
@@ -99,7 +102,7 @@ def main(args):
                                transforms.Resize(args.img_size),
                                transforms.CenterCrop(args.img_size),
                                transforms.ToTensor(),
-                               transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                               #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                            ]))
 	else:
 		dataset=datasets.MNIST(
@@ -107,8 +110,9 @@ def main(args):
 	        train=True,
 	        download=True,
 	        transform=transforms.Compose(
-	            [transforms.Resize(args.img_size), transforms.ToTensor(), transforms.Normalize([0.5], [0.5])]
-	        ),
+	            [transforms.Resize(args.img_size), transforms.ToTensor()
+				#,transforms.Normalize([0.5], [0.5])
+			]),
 	    )
 	dataloader = torch.utils.data.DataLoader(
 	    dataset,
@@ -139,6 +143,11 @@ if __name__=="__main__":
 	cuda = True if torch.cuda.is_available() else False
 	device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 	Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
-	GANmodel=RealNVPGAN(args)			#simpleGAN or DCGAN or RealNVPGAN
+	if args.model=='realnvp':
+		GANmodel=RealNVPGAN(args)			#simpleGAN or DCGAN or RealNVPGAN
+	elif args.model=='gan':
+		GANmodel=simpleGAN(args)
+	elif args.model=='dcgan':
+		GANmodel=DCGAN(args)
 
 	main(args)

@@ -26,7 +26,7 @@ class DCDiscriminator(nn.Module):
 	def __init__(self, args):
 		super(DCDiscriminator, self).__init__()
 		self.ngpu = 1
-		ndf=64
+		ndf=args.img_size
 		nc=args.channels
 		self.main = nn.Sequential(
 			# input is (nc) x 64 x 64
