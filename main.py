@@ -81,11 +81,12 @@ def train(args,generator,discriminator,dataloader,optimizer_G,optimizer_D,epoch)
 		    "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
 		    % (epoch, args.num_epochs, i, len(dataloader), d_loss.item(), g_loss.item())
 		)
-		if i%200==0:
-			save_image(gen_imgs.data[:25], "images/epoch-{}, batches-{}.png".format(epoch,i), nrow=5, normalize=False)
+		if i%10==0:
+			save_image(gen_imgs.data[:25], "images/epoch-{}, batches-{}.png".format(epoch,i), nrow=5, normalize=(args.model!='realnvp'))
 
 def test(args):
 	pass
+
 
 
 def save_models(args, epoch, discriminator, generator):
@@ -108,7 +109,7 @@ def main(args):
 		DS=datasets.CIFAR10
 		norm=((0.5,0.5,0.5),(0.5,0.5,0.5))
 	
-	if args.model=='realnvp':
+	if args.model!='realnvp':
 		reqtrans=transforms.Compose([transforms.Resize(args.img_size),transforms.CenterCrop(args.img_size),transforms.ToTensor(),
 							transforms.Normalize(norm[0],norm[1])
 						])
@@ -143,7 +144,7 @@ if __name__=="__main__":
 	args = parseargs()
 	os.makedirs("images", exist_ok=True)
 	os.makedirs(args.checkpoint_dir,exist_ok=True)
-	adversarial_loss = torch.nn.BCELoss()
+	adversarial_loss = torch.nn.BCEWithLogitsLoss()
 	cuda = True if torch.cuda.is_available() else False
 	device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 	Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
