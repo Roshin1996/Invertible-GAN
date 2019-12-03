@@ -18,7 +18,7 @@ from models.generator import Generator"""
 def parseargs():
 	parser = argparse.ArgumentParser(description="Invertible GAN(RealNVP and Spectral Norm loss)")
 	parser.add_argument('--batch_size', type=int, default=64)
-	parser.add_argument('--dataset', type=str, default="MNIST")
+	parser.add_argument('--dataset', type=str, default="mnist")
 	parser.add_argument('--num_epochs', type=int, default=200)
 	parser.add_argument('--checkpoint_dir', type=str, default="")
 	parser.add_argument('--is_cuda', type=bool, default=True)
@@ -111,7 +111,7 @@ def main(args):
 	
 	if args.model=='realnvp':
 		reqtrans=transforms.Compose([transforms.Resize(args.img_size),transforms.CenterCrop(args.img_size),transforms.ToTensor(),
-							transforms.Normalize(norm)
+							transforms.Normalize(norm[0],norm[1])
 						])
 	else:
 		reqtrans=transforms.Compose([transforms.Resize(args.img_size),transforms.CenterCrop(args.img_size),transforms.ToTensor()])
