@@ -95,25 +95,29 @@ def save_models(args, epoch, discriminator, generator):
 
 
 def main(args):
-	if args.dataset=='CelebA':
+	if args.dataset=='celeba':
 		dataroot='data/CelebA'
-		dataset = datasets.CelebA(root=dataroot,download=True,
-                           transform=transforms.Compose([
-                               transforms.Resize(args.img_size),
-                               transforms.CenterCrop(args.img_size),
-                               transforms.ToTensor(),
-                               #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-                           ]))
+		DS=datasets.CelebA
+		norm=((0.5,0.5,0.5),(0.5,0.5,0.5))
+	elif args.dataset=='mnist':
+		dataroot='data/mnist'
+		DS=datasets.MNIST
+		norm=([0.5,],[0.5])
+	
+	elif args.dataset=='cifar10':
+		dataroot='data/cifar10'
+		DS=datasets.CIFAR10
+		norm=((0.5,0.5,0.5),(0.5,0.5,0.5))
+	
+	if args.model=='realnvp':
+		reqtrans=transforms.Compose([transforms.Resize(args.img_size),transforms.CenterCrop(args.img_size),transforms.ToTensor(),
+							transforms.Normalize(norm)
+						])
 	else:
-		dataset=datasets.MNIST(
-	        "data/mnist",
-	        train=True,
-	        download=True,
-	        transform=transforms.Compose(
-	            [transforms.Resize(args.img_size), transforms.ToTensor()
-				#,transforms.Normalize([0.5], [0.5])
-			]),
-	    )
+		reqtrans=transforms.Compose([transforms.Resize(args.img_size),transforms.CenterCrop(args.img_size),transforms.ToTensor()])
+
+	dataset = DS(dataroot,download=True,transform=reqtrans)
+
 	dataloader = torch.utils.data.DataLoader(
 	    dataset,
 	    batch_size=args.batch_size,
