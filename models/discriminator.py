@@ -1,5 +1,6 @@
 import torch.nn as nn
 import numpy as np
+from models.spectralnorm import SpectralNorm
 class simpleDiscriminator(nn.Module):
 	def __init__(self,args):
 		super(simpleDiscriminator, self).__init__()
@@ -51,3 +52,19 @@ class DCDiscriminator(nn.Module):
 
 	def forward(self, input):
 		return self.main(input)
+
+
+class spectralDiscriminator(nn.Module):
+	def __init__(self,args):
+		def super(spectralDiscriminator,self).__init__()
+		self.model = nn.Sequential(
+                SpectralNorm(nn.Linear(int(args.img_shape), 512)),
+                nn.LeakyReLU(0.1),
+                SpectralNorm(nn.Linear(512, 256)),
+                nn.LeakyReLU(0.1),
+                SpectralNorm(nn.Linear(256, 1)),
+            )
+			
+	def forward(self, img):
+		img_flat = img.view(img.shape[0], -1)
+		return self.model(img_flat)

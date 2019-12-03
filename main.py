@@ -32,10 +32,9 @@ def parseargs():
 
 	args = parser.parse_args()
 	if args.checkpoint_dir == "":
-		args.checkpoint_dir = "checkpoint_" + f"num_epochs_{args.num_epochs}_" + \
+		args.checkpoint_dir = "savedmodels/checkpoint_" + f"num_epochs_{args.num_epochs}_" + \
 							  f"dataset_{args.dataset}_" + f"batch_size_{args.batch_size}"
-	if not os.path.exists(args.checkpoint_dir):
-		os.mkdir(args.checkpoint_dir)
+
 	return args
 
 
@@ -143,6 +142,7 @@ def main(args):
 if __name__=="__main__":
 	args = parseargs()
 	os.makedirs("images", exist_ok=True)
+	os.makedirs(args.checkpoint_dir,exist_ok=True)
 	adversarial_loss = torch.nn.BCELoss()
 	cuda = True if torch.cuda.is_available() else False
 	device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
