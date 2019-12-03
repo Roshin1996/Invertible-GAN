@@ -56,9 +56,6 @@ def train(args,generator,discriminator,dataloader,optimizer_G,optimizer_D,epoch)
 		#z=torch.randn(GANmodel.initialize_z(imgs.shape[0]),dtype=torch.float32,device=device)
 
         # Generate a batch of images
-		#gen_imgs,_ = generator(z,reverse=True)
-		#gen_imgs=torch.sigmoid(gen_imgs)
-		#gen_imgs = generator(z)
 		gen_imgs=GANmodel.sample(imgs.shape[0]).to(device)
 
         # Loss measures generator's ability to fool the discriminator
