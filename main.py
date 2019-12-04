@@ -29,6 +29,7 @@ def parseargs():
 	parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
 	parser.add_argument("--channels", type=int, default=1, help="number of image channels")
 	parser.add_argument("--model",type=str,default="realnvp")
+	parser.add_argument("--sample_wait",type=int,default=200)
 
 	args = parser.parse_args()
 	if args.checkpoint_dir == "":
@@ -38,48 +39,38 @@ def parseargs():
 	return args
 
 
+
 def train(args,generator,discriminator,dataloader,optimizer_G,optimizer_D,epoch):
 	for i, (imgs, _) in enumerate(dataloader):
-		# Adversarial ground truths
 		valid = Variable(Tensor(imgs.size(0), 1).fill_(1.0), requires_grad=False)
 		fake = Variable(Tensor(imgs.size(0), 1).fill_(0.0), requires_grad=False)
 
-        # Configure input
 		real_imgs = Variable(imgs.type(Tensor))
-
-        # -----------------
-        #  Train Generator
-        # -----------------
 		optimizer_G.zero_grad()
+		optimizer_D.zero_grad()
 
-        # Sample noise as generator input
-		#z=torch.randn(GANmodel.initialize_z(imgs.shape[0]),dtype=torch.float32,device=device)
+		z = torch.randn(imgs.shape[0], args.channels,args.img_size,args.img_size,requires_grad=False).to(device)
 
-        # Generate a batch of images
-		gen_imgs=GANmodel.sample(imgs.shape[0]).to(device)
+		gen_imgs, _=generator(z,reverse=True)
 
-        # Loss measures generator's ability to fool the discriminator
+		real_loss = adversarial_loss(discriminator(real_imgs),valid)
+		fake_loss=adversarial_loss(discriminator(gen_imgs.detach()),fake)
+		d_loss=real_loss+fake_loss
+		d_loss.backward()
+		optimizer_D.step()
+
 		g_loss = adversarial_loss(discriminator(gen_imgs), valid)
 		g_loss.backward()
 		optimizer_G.step()
 
-        # ---------------------
-        #  Train Discriminator
-        # ---------------------
-		optimizer_D.zero_grad()
 
-        # Measure discriminator's ability to classify real from generated samples
-		real_loss = adversarial_loss(discriminator(real_imgs), valid)
-		fake_loss = adversarial_loss(discriminator(gen_imgs.detach()), fake)
-		d_loss = (real_loss + fake_loss) / 2
-		d_loss.backward()
-		optimizer_D.step()
 		print(
-		    "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
-		    % (epoch, args.num_epochs, i, len(dataloader), d_loss.item(), g_loss.item())
+			"[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
+			% (epoch, args.num_epochs, i, len(dataloader), d_loss.item(), g_loss.item())
 		)
-		if i%10==0:
-			save_image(gen_imgs.data[:25], "images/epoch-{}, batches-{}.png".format(epoch,i), nrow=5, normalize=(args.model!='realnvp'))
+		if i%100==0:
+				save_image(gen_imgs.data[:25], "images/epoch-{}, batches-{}.png".format(epoch,i), nrow=5, normalize=(args.model!='realnvp'))
+
 
 def test(args):
 	pass
