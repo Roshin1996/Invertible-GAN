@@ -8,7 +8,6 @@ from torchvision import datasets
 from torchvision.transforms import transforms
 from torch.autograd import Variable
 from torchvision.utils import save_image
-import torchvision.datasets as dset
 from models.GANmodels import simpleGAN, DCGAN, RealNVPGAN
 """
 from models.real_nvp import RealNVP

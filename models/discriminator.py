@@ -57,7 +57,7 @@ class DCDiscriminator(nn.Module):
 class spectralDiscriminator(nn.Module):
 	def __init__(self,args):
 		super(spectralDiscriminator,self).__init__()
-		if args.dataset=='mnist':
+		if args.dataset=='mnist2':
 			self.model = nn.Sequential(
                 SpectralNorm(nn.Linear(int(args.channels*args.img_size*args.img_size), 512)),
                 nn.LeakyReLU(0.1),
@@ -66,47 +66,31 @@ class spectralDiscriminator(nn.Module):
                 SpectralNorm(nn.Linear(256, 1)),
             )
 		
-		elif args.dataset=='cifar10':
+		elif args.dataset=='cifar10' or args.dataset=='celeba':
+			self.d=args.dataset
+			self.s=args.img_size/8
 			self.cnn = nn.Sequential(
-                SpectralNorm(nn.Conv2d(3, 64, 3, stride=2, padding=1)),
+                SpectralNorm(nn.Conv2d(args.channels, 64, 4, stride=2, padding=1)),
                 nn.LeakyReLU(0.1),
-                SpectralNorm(nn.Conv2d(64, 128, 3, stride=2, padding=1)),
+                SpectralNorm(nn.Conv2d(64, 128, 4, stride=2, padding=1)),
                 nn.LeakyReLU(0.1),
-                SpectralNorm(nn.Conv2d(128, 256, 3, stride=2, padding=1)),
+                SpectralNorm(nn.Conv2d(128, 256, 4, stride=2, padding=1)),
                 nn.LeakyReLU(0.1),
             )
 			
 			self.fc = nn.Sequential(
-                SpectralNorm(nn.Linear(4*4*256, 128)),
+                SpectralNorm(nn.Linear(int(self.s*self.s*256), 128)),
                 nn.LeakyReLU(0.1),
                 SpectralNorm(nn.Linear(128, 1))
             )
-		
-		elif args.dataset=='celeba':
-			self.model = nn.Sequential(
-                SpectralNorm(nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1)),
-                nn.LeakyReLU(0.1),
-                SpectralNorm(nn.Conv2d(64, 128, 4, 2, 1)),
-                nn.LeakyReLU(0.1),
-                SpectralNorm(nn.Conv2d(128, 256, 4, 2, 1)),
-                nn.LeakyReLU(0.1),
-                SpectralNorm(nn.Conv2d(256, 512, 4, 2, 1)),
-                nn.LeakyReLU(0.1),
-                SpectralNorm(nn.Conv2d(512, 1, 4, 1))
-            )
-
-		self.d=args.dataset
 			
 	def forward(self, img):
 		if self.d=='mnist':
 			img_flat = img.view(img.shape[0], -1)
 			return self.model(img_flat)
 
-		elif self.d=='celeba':
-			return self.model(img).view(-1)
-
-		elif self.d=='cifar10':
+		elif self.d=='cifar10' or self.d=='celeba':
 			x = self.cnn(img)
-			x = x.view(-1, 4*4*256)
+			x = x.view(-1, int(self.s*self.s*256))
 			x = self.fc(x)
 			return x
