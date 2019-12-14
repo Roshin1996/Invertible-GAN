@@ -57,7 +57,8 @@ class DCDiscriminator(nn.Module):
 class spectralDiscriminator(nn.Module):
 	def __init__(self,args):
 		super(spectralDiscriminator,self).__init__()
-		if args.dataset=='mnist2':
+		if args.dataset=='mnist':
+			self.d='mnist'
 			self.model = nn.Sequential(
                 SpectralNorm(nn.Linear(int(args.channels*args.img_size*args.img_size), 512)),
                 nn.LeakyReLU(0.1),
@@ -89,7 +90,7 @@ class spectralDiscriminator(nn.Module):
 			img_flat = img.view(img.shape[0], -1)
 			return self.model(img_flat)
 
-		elif self.d=='cifar10' or self.d=='celeba':
+		elif self.d=='cifar10' or self.d=='celeba' or self.d=='stl10':
 			x = self.cnn(img)
 			x = x.view(-1, int(self.s*self.s*256))
 			x = self.fc(x)

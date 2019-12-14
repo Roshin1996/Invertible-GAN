@@ -32,8 +32,7 @@ def parseargs():
 
 	args = parser.parse_args()
 	if args.checkpoint_dir == "":
-		args.checkpoint_dir = "savedmodels/checkpoint_" + f"num_epochs_{args.num_epochs}_" + \
-							  f"dataset_{args.dataset}_" + f"batch_size_{args.batch_size}"
+		args.checkpoint_dir = "savedmodels/{}".format(args.dataset)
 
 	return args
 
@@ -67,8 +66,8 @@ def train(args,generator,discriminator,dataloader,optimizer_G,optimizer_D,epoch)
 			"[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
 			% (epoch, args.num_epochs, i, len(dataloader), d_loss.item(), g_loss.item())
 		)
-		if i%100==0:
-				save_image(gen_imgs.data[:25], "images/epoch-{}, batches-{}.png".format(epoch,i), nrow=5, normalize=(args.model!='realnvp'))
+		if i%args.sample_wait==0:
+				save_image(gen_imgs.data[:25], "{}/epoch-{}, batches-{}.png".format(imagedir,epoch,i), nrow=5, normalize=False)
 
 
 def test(args):
@@ -96,12 +95,12 @@ def main(args):
 		DS=datasets.CIFAR10
 		norm=((0.5,0.5,0.5),(0.5,0.5,0.5))
 	
-	if args.model!='realnvp':
-		reqtrans=transforms.Compose([transforms.Resize(args.img_size),transforms.CenterCrop(args.img_size),transforms.ToTensor(),
-							transforms.Normalize(norm[0],norm[1])
-						])
-	else:
-		reqtrans=transforms.Compose([transforms.Resize(args.img_size),transforms.CenterCrop(args.img_size),transforms.ToTensor()])
+	elif args.dataset=='stl10':
+		dataroot='data/stl10'
+		DS=datasets.STL10
+		norm=((0.5,0.5,0.5),(0.5,0.5,0.5))
+	
+	reqtrans=transforms.Compose([transforms.Resize(args.img_size),transforms.CenterCrop(args.img_size),transforms.ToTensor()])
 
 	dataset = DS(dataroot,download=True,transform=reqtrans)
 
@@ -119,6 +118,7 @@ def main(args):
 		generator.cuda()
 		discriminator.cuda()
 		adversarial_loss.cuda()
+
 	optimizer_G = torch.optim.Adam(generator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
 	optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
 	for epoch in range(args.num_epochs):
@@ -129,17 +129,12 @@ def main(args):
 
 if __name__=="__main__":
 	args = parseargs()
-	os.makedirs("images", exist_ok=True)
+	imagedir="images/{}".format(args.dataset)
+	os.makedirs(imagedir, exist_ok=True)
 	os.makedirs(args.checkpoint_dir,exist_ok=True)
 	adversarial_loss = torch.nn.BCEWithLogitsLoss()
 	cuda = True if torch.cuda.is_available() else False
 	device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 	Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
-	if args.model=='realnvp':
-		GANmodel=RealNVPGAN(args)			#simpleGAN or DCGAN or RealNVPGAN
-	elif args.model=='gan':
-		GANmodel=simpleGAN(args)
-	elif args.model=='dcgan':
-		GANmodel=DCGAN(args)
-
+	GANmodel=RealNVPGAN(args)
 	main(args)
