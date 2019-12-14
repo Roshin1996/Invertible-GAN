@@ -1,8 +1,5 @@
 import argparse
-import datetime
 import torch
-import torch.nn as nn
-import numpy as np
 import os
 from torchvision import datasets
 from torchvision.transforms import transforms
@@ -26,7 +23,7 @@ def parseargs():
 
 
 def reconstruct(args,generator,dataloader):
-    for i, (imgs, _) in enumerate(dataloader):	
+    for i, (imgs, labels) in enumerate(dataloader):	
         real_imgs = Variable(imgs.type(Tensor))
         z,_=generator(real_imgs)
         reconstructed,_=generator(z,reverse=True)
