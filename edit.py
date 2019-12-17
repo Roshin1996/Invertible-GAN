@@ -17,6 +17,7 @@ def parseargs():
     parser.add_argument("--channels", type=int, default=3, help="number of image channels")
     parser.add_argument("--model",type=str,default="realnvp")
     parser.add_argument("--num_samples",type=int,default=20,help="number of samples to output")
+    parser.add_argument("--a",type=int,default=0,help="attribute")
     args = parser.parse_args()
     return args
 
@@ -26,11 +27,12 @@ def reconstruct(args,generator,dataloader):
     for i, (imgs, labels) in enumerate(dataloader):	
         real_imgs = Variable(imgs.type(Tensor))
         z,_=generator(real_imgs)
+        for x in range(args.batch_size):
+            z[x]=z[x]+z0
         reconstructed,_=generator(z,reverse=True)
 
-        save_image(real_imgs.data[:25], "reconstructedimages/{}/{}-original.png".format(args.dataset,i), nrow=5)
-        save_image(reconstructed.data[:25], "reconstructedimages/{}/{}-reconstructed.png".format(args.dataset,i), nrow=5,normalize=True)
-        save_image((reconstructed-real_imgs).data[:25],"reconstructedimages/{}/{}-difference.png".format(args.dataset,i), nrow=5)
+        save_image(real_imgs.data[:25], "editedimages/{}/{}-original.png".format(args.dataset,i), nrow=5)
+        save_image(reconstructed.data[:25], "editedimages/{}/{}-reconstructed.png".format(args.dataset,i), nrow=5,normalize=True)
 
         if i==args.num_samples:
             break
@@ -39,19 +41,9 @@ def reconstruct(args,generator,dataloader):
 
 
 def main(args):
-    if args.dataset=='celeba':
-        dataroot='data/CelebA'
-        DS=datasets.CelebA
-        norm=((0.5,0.5,0.5),(0.5,0.5,0.5))
-    elif args.dataset=='mnist':
-        dataroot='data/mnist'
-        DS=datasets.MNIST
-        norm=([0.5,],[0.5])
-
-    elif args.dataset=='cifar10':
-        dataroot='data/cifar10'
-        DS=datasets.CIFAR10
-        norm=((0.5,0.5,0.5),(0.5,0.5,0.5))
+    dataroot='data/CelebA'
+    DS=datasets.CelebA
+    norm=((0.5,0.5,0.5),(0.5,0.5,0.5))
 
     reqtrans=transforms.Compose([transforms.Resize(args.img_size),transforms.CenterCrop(args.img_size),transforms.ToTensor()])
 
@@ -67,14 +59,17 @@ def main(args):
     generator.load_state_dict(torch.load('./savedmodels/{}/generator5'.format(args.dataset)))
     if cuda:
         generator.cuda()
-    
+
     reconstruct(args,generator,dataloader)
 
 
 if __name__=="__main__":
     args = parseargs()
-    os.makedirs("reconstructedimages/{}".format(args.dataset), exist_ok=True)
+    os.makedirs("editedimages/{}".format(args.dataset), exist_ok=True)
     cuda = True if torch.cuda.is_available() else False
     Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
+    z_avg=torch.load('savedzvectors/zavg')
+    z0=z_avg[args.a][1]-z_avg[args.a][0]
+    z0=z0.to('cuda')
 
     main(args)
